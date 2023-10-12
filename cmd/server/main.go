@@ -27,6 +27,6 @@ func main() {
   }
 	handleInterrupt(server)
 	if err := server.Up(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

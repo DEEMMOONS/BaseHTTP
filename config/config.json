@@ -1,0 +1,12 @@
+{
+    "server": {
+        "host": "localhost",
+        "port": "8080",
+        "subscribe_subject": "addNewOrder"
+    },
+    "database": {
+        "database": "wb",
+        "user": "admin",
+        "password": "admin"
+    }
+}
