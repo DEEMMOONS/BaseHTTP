@@ -1,9 +1,17 @@
 package server
 
+import (
+  "fmt"
+  "net/http"
+  "encoding/json"
+  "log"
+  "github.com/go-pg/pg"
+  "github.com/nats-io/stan.go"
+)
 
 type Server struct {
-  cache map[string]models.Order
-  db *sql.DB
+  cache map[string]database.Order
+  db *pg.DB
   config *config
   router *mux.Router
 	sc     stan.Conn
@@ -15,14 +23,19 @@ func NewServer(cfgPath string) (*Server, error) {
   if err != nil {
       return nil, err
   }
-  db, err := sql.Open("postgres", connStr)
+  db, err := pg.Connect(&pg.Options{
+		User:     config.DB.User,
+		Password: config.DB.Password,
+		Database: config.DB.Database,
+	})
+
   if err != nil {
     return nil, err
   }
   log.Printf("Database is up\n")
   return &Server {
     db: db,
-    cache: make(map[string]model.Order),
+    cache: make(map[string]database.Order),
     config: config,
     router: mux.NewRouter(),
   }, nil
@@ -36,7 +49,7 @@ func (s *Server) Up() error{
 	if err := s.connectToStream(); err != nil {
 		return err
 	}
-  s.router.HandleFunc("/order/{order_uid}", s.GetByID).Methods("GET")
+  s.router.HandleFunc("/order/{order_uid}", s.getOrder).Methods("GET")
   log.Printf("Server is up on %s\n", addr)
   log.Fatal(http.ListenAndServe(addr, s.router))
   return nil
@@ -50,7 +63,7 @@ func (s *Server) Down() {
 }
 
 func (s *Server) getAddr() string {
-  return fmt.Sprintf("%s:%s", s.config.Address, s.config.Port)
+  return fmt.Sprintf("%s:%s", s.config.Host.Address, s.config.Host.Port)
 }
 
 func (s *Server) connectToStream() error {
@@ -58,7 +71,7 @@ func (s *Server) connectToStream() error {
   if err != nil {
 		return err
 	}
-	sub, err := sc.Subscribe(s.config.SubscribeSubject, s.handleRequest)
+	sub, err := sc.Subscribe(s.config.Host.SubscribeSubject, s.handleRequest)
 	if err != nil {
 		return err
 	}
@@ -73,9 +86,11 @@ func (s *Server) handleRequest(m *stan.Msg) {
 		return
 	}
 	if ok := s.addToCache(data); ok {
-		log.Printf("Cache updated\n")
-		database.AddOrder(s.db, data)
-	}
+		if err := s.addOrder(data), err {
+      log.Printf("Order adding error: %w\n", err)
+    }
+		log.Printf("Data are updated\n")
+  }
 }
 
 func (s *Server) addToCache(data database.Order) bool {
@@ -88,5 +103,39 @@ func (s *Server) addToCache(data database.Order) bool {
 }
 
 func (s *Server) createCache() error {
-  orders := make([]models.Order, 0)
+	orders := make([]database.Order, 0)
+	err := s.db.Model(&orders).Select()
+	if err != nil {
+		return err
+	}
+	for _, order := range orders {
+		s.cache[order.OrderUid] = order
+	}
+	return nil
+}
+
+func (s *Server) addOrder(data Order) error {
+  if err := database.AddOrder(s.db, data); err != nil {
+    return err
+	}
+	return nil
+}
+
+func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) { 
+  data, ok := s.cache[id]
+	if !ok {
+		http.Error(w, `ID not found`, 400)
+    return
+	}
+	ans, err := json.Marshal(data)
+	if err != nil {
+    http.Error(w, `Internal server Error`, 500)
+		return
+	}
+  w.Header().Add("Content-Type", "application/json")
+  w.WriteHeader(200)
+	_, err := w.Write(ans)
+	if err != nil {
+		log.Println(err)
+	}
 }
