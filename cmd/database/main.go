@@ -1,7 +1,7 @@
 package main
 
 import {
-  "github.com/DEEMMOONS/BaseHTTP/tree/main/internal/server"
+  "github.com/DEEMMOONS/BaseHTTP/internal/server"
 }
 
 func main() {

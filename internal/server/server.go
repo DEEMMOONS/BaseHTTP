@@ -7,7 +7,7 @@ import (
   "log"
   "github.com/go-pg/pg"
   "github.com/nats-io/stan.go"
-  "github.com/DEEMMOONS/BaseHTTP/tree/main/internal/database"
+  "github.com/DEEMMOONS/BaseHTTP/internal/database"
 )
 
 type Server struct {
