@@ -5,7 +5,7 @@ import (
   "github.com/go-pg/pg"
 )
 
-func AddOrder(db *pg.DB, order server.Order) error {
+func AddOrder(db *pg.DB, order Order) error {
 	if _, err := db.Model(&order).Insert(); err != nil {
 		return err
 	}
@@ -19,7 +19,7 @@ func CreateSchema(db *pg.DB) error {
 	}
 	for _, model := range models {
 		op := orm.CreateTableOptions{}
-		err := db.DB.Model(model).CreateTable(&op)
+		err := db.Model(model).CreateTable(&op)
 		if err != nil {
 			return err
 		}

@@ -23,7 +23,7 @@ type config struct {
 }
 
 func CreateConfig(cfgPath string) (*config, error) {
-data, err := os.ReadFile(path)
+data, err := os.ReadFile(cfgPath)
   if err != nil {
     return nil, err
   }

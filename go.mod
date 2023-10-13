@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/go-pg/pg v8.0.7+incompatible
+	github.com/gorilla/mux v1.8.0
 	github.com/nats-io/stan.go v0.10.4
 )
 

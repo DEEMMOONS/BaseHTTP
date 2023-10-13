@@ -8,6 +8,7 @@ import (
   "github.com/go-pg/pg"
   "github.com/nats-io/stan.go"
   "github.com/DEEMMOONS/BaseHTTP/internal/database"
+  "github.com/gorilla/mux"
 )
 
 type Server struct {
@@ -24,7 +25,7 @@ func NewServer(cfgPath string) (*Server, error) {
   if err != nil {
       return nil, err
   }
-  db, err := pg.Connect(&pg.Options{
+  db:= pg.Connect(&pg.Options{
 		User:     config.DB.User,
 		Password: config.DB.Password,
 		Database: config.DB.Database,
@@ -87,7 +88,7 @@ func (s *Server) handleRequest(m *stan.Msg) {
 		return
 	}
 	if ok := s.addToCache(data); ok {
-		if err := s.addOrder(data), err {
+		if err := s.addOrder(data); err != nil {
       log.Printf("Order adding error: %w\n", err)
     }
 		log.Printf("Data are updated\n")
@@ -115,7 +116,7 @@ func (s *Server) createCache() error {
 	return nil
 }
 
-func (s *Server) addOrder(data Order) error {
+func (s *Server) addOrder(data database.Order) error {
   if err := database.AddOrder(s.db, data); err != nil {
     return err
 	}
@@ -123,6 +124,8 @@ func (s *Server) addOrder(data Order) error {
 }
 
 func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) { 
+  vars := mux.Vars(r)
+  id := vars["order_uid"]
   data, ok := s.cache[id]
 	if !ok {
 		http.Error(w, `ID not found`, 400)
@@ -135,8 +138,8 @@ func (s *Server) getOrder(w http.ResponseWriter, r *http.Request) {
 	}
   w.Header().Add("Content-Type", "application/json")
   w.WriteHeader(200)
-	_, err := w.Write(ans)
-	if err != nil {
-		log.Println(err)
+	_, err2 := w.Write(ans)
+	if err2 != nil {
+		log.Println(err2)
 	}
 }

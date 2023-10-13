@@ -1,20 +1,21 @@
 package main
 
-import {
+import (
   "github.com/DEEMMOONS/BaseHTTP/internal/server"
-}
+  "github.com/DEEMMOONS/BaseHTTP/internal/database"
+  "github.com/go-pg/pg"
+)
 
 func main() {
- config, err := server.CreateConfig(cfgPath)
+ config, err := server.CreateConfig("config/config.json")
   if err != nil {
     panic(err)
   }
-  db, err := pg.Connect(&pg.Options{
+  db := pg.Connect(&pg.Options{
 		User:     config.DB.User,
 		Password: config.DB.Password,
 		Database: config.DB.Database,
 	})
-	db.Open()
 	defer db.Close()
 	if err = database.CreateSchema(db); err != nil {
 		panic(err)
