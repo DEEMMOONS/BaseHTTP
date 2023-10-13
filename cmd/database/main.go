@@ -1,9 +1,11 @@
 package main
 
-
+import {
+  "github.com/DEEMMOONS/BaseHTTP/tree/main/internal/server"
+}
 
 func main() {
- config, err := CreateConfig(cfgPath)
+ config, err := server.CreateConfig(cfgPath)
   if err != nil {
     panic(err)
   }
